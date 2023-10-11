@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  memcached:
+    image: memcached:latest
+    restart: always
+    networks:
+      - yopass-memcached
+  yopass:
+    image: jhaals/yopass:latest
+    restart: always
+    command: "--memcached=memcached:11211 --port 80"
+    networks:
+      - cloudflared-yopass
+      - yopass-memcached
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - cloudflared-yopass
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+networks:
+  cloudflared-yopass:
+  yopass-memcached:
